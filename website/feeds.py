@@ -86,7 +86,7 @@ def hentDomain(artikkel):
         print(f"Error processing article: {e}")
         return ""
 def hentTid(artikkel, tid):
-    return time_since(artikkel.published_parsed, tid) + " ago"
+    return time_since(artikkel.published_parsed, tid) + " siden"
 if __name__ == '__main__':
     a = get_articles(['https://www.youtube.com/feeds/videos.xml?channel_id=UCBa659QWEk1AI4Tg--mrJ2A'])
     print(a[0]['published_parsed'])
