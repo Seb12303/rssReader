@@ -8,10 +8,10 @@ feeds = Blueprint('feeds', __name__)
 
 @feeds.route('/feed')
 def feed():
-    links=['https://www.vg.no/rss/feed','https://www.theverge.com/rss/index.xml','https://www.nrk.no/toppsaker.rss','https://www.tv2.no/rss/nyheter','https://www.theguardian.com/us/rss']
-    #links=['https://www.youtube.com/feeds/videos.xml?channel_id=UCBa659QWEk1AI4Tg--mrJ2A']
+    #links=['https://www.vg.no/rss/feed','https://www.theverge.com/rss/index.xml','https://www.nrk.no/toppsaker.rss','https://www.tv2.no/rss/nyheter','https://www.theguardian.com/us/rss']
+    links=['https://www.youtube.com/feeds/videos.xml?channel_id=UCNJ1Ymd5yFuUPtn21xtRbbw']
     #links=['https://www.vg.no/rss/feed']
-     #links = ['https://vimeo.com/georgiafootball/videos/rss']
+    #links = ['https://vimeo.com/georgiafootball/videos/rss']
     articles = get_articles(links)
     user_timezone = request.args.get('timezone', 'UTC')
 

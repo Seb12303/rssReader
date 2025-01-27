@@ -1,0 +1,25 @@
+<div class="col-12 mb-1">
+    <div class="d-flex align-items-center border p-2">
+      {% if hentBilde(article) != "" %}
+      <img src="{{ hentBilde(article) }}" alt="{{ article.title }}" style="object-fit: cover;height: 40px;width: 40px;margin-right: 10px;">
+      {% endif %}
+      <div class="d-flex flex-column flex-grow-1">
+        <div class="d-flex justify-content-between align-items-center">
+          <p class="text-muted small mb-0">{{ hentDomain(article) }}</p>
+          <p class="text-muted small mb-0">{{ hentTid(article, user_timezone) }}</p>
+        </div>
+        <div class="d-flex justify-content-between align-items-center">
+          <a href="{{ article.link }}" class="text-decoration-none" style="color:black;">{{ article.title }}</a>
+          <button type="button" class="btn btn-link btn-sm text-primary p-0 view-article-btn" 
+                  data-bs-toggle="modal" 
+                  data-bs-target="#articleModal"
+                  data-title="{{ article.title }}"
+                  data-image="{{ hentBilde(article) }}"
+                  data-summary="{{ hentSummary(article) }}"
+                  data-link="{{ article.link }}">
+            Vis mer
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
