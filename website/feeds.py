@@ -18,7 +18,6 @@ def feed():
 def manageFeed():
     return render_template('manage.html')
 
-
 def get_articles(links):
 
     articles = []
