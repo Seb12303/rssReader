@@ -3,23 +3,29 @@ import feedparser
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse
 from website.timezoneConverter import time_since
+import requests
+from website.summarizeGPT import getSummary as chatSummary
+from flask_login import login_required, current_user
 
 feeds = Blueprint('feeds', __name__)
 
+
 @feeds.route('/feed')
 def feed():
-    links=['https://www.vg.no/rss/feed','https://www.theverge.com/rss/index.xml','https://www.nrk.no/toppsaker.rss','https://www.tv2.no/rss/nyheter','https://www.theguardian.com/us/rss']
+    #links=['https://www.vg.no/rss/feed','https://www.theverge.com/rss/index.xml','https://www.nrk.no/toppsaker.rss','https://www.tv2.no/rss/nyheter','https://www.theguardian.com/us/rss']
+    links=['https://www.vg.no/rss/feed']
     articles = get_articles(links)
     user_timezone = request.args.get('timezone', 'UTC')
 
-    return render_template('feed.html', artikler=articles, hentBilde=hentBilde, hentSummary=hentSummary, hentDomain=hentDomain, hentTid=hentTid, user_timezone=user_timezone)
+    return render_template('feed.html', artikler=articles, hentBilde=hentBilde, hentSummary=hentSummary, hentDomain=hentDomain, hentTid=hentTid, user_timezone=user_timezone, user=current_user)
+
 
 @feeds.route('/manage')
+@login_required
 def manageFeed():
-    return render_template('manage.html')
+    return render_template('manage.html', user=current_user)
 
 def get_articles(links):
-
     articles = []
     for link in links:
         feed = feedparser.parse(link)
@@ -31,6 +37,8 @@ def get_articles(links):
             except:
                 print("Bad article, no link")
     return sorted(articles, key=lambda hl: hl.get('published_parsed', None), reverse=True)
+
+
 #returnerer "" hvis det ikke finnes bilde, eller bildeurl hvis det er bilde.
 def hentBilde(artikkel):
     url=""
@@ -68,6 +76,7 @@ def hentBilde(artikkel):
     return url
 def hentSummary(artikkel):
     try:
+        #return hentSummaryWeb(artikkel)
         basic = artikkel.summary
         soup = BeautifulSoup(basic, "html.parser")
         summary = soup.getText()
@@ -75,6 +84,14 @@ def hentSummary(artikkel):
     except:
         pass
     return ""
+def hentSummaryWeb(artikkel):
+    try:
+        data = requests.get(artikkel.link).content
+        soup = BeautifulSoup(data, 'html.parser')
+        cleaned = soup.getText()
+        return chatSummary(cleaned)
+    except:
+        return ""
 def hentDomain(artikkel):
     try:
         #Tries to get domain name from link in article
