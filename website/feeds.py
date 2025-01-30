@@ -9,7 +9,6 @@ from flask_login import login_required, current_user
 
 feeds = Blueprint('feeds', __name__)
 
-
 @feeds.route('/feed')
 def feed():
     #links=['https://www.vg.no/rss/feed','https://www.theverge.com/rss/index.xml','https://www.nrk.no/toppsaker.rss','https://www.tv2.no/rss/nyheter','https://www.theguardian.com/us/rss']
@@ -20,10 +19,6 @@ def feed():
     return render_template('feed.html', artikler=articles, hentBilde=hentBilde, hentSummary=hentSummary, hentDomain=hentDomain, hentTid=hentTid, user_timezone=user_timezone, user=current_user)
 
 
-@feeds.route('/manage')
-@login_required
-def manageFeed():
-    return render_template('manage.html', user=current_user)
 
 def get_articles(links):
     articles = []

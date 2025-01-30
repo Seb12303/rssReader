@@ -15,9 +15,11 @@ def create_app():
     from .views import views
     from .auth import auth
     from .feeds import feeds
+    from .manage import manage
     app.register_blueprint(views, url_prefix='/')
     app.register_blueprint(auth, url_prefix='/')
     app.register_blueprint(feeds, url_prefix='/')
+    app.register_blueprint(manage, url_prefix='/')
 
     from . import models
 
