@@ -15,24 +15,31 @@ def createFeedGroup(user, groupname):
     db.session.add(feedgroup)
     db.session.commit()
 
-def registerFeedToGroup(link, group):
-# Create a feed
-    db_search = Feed.query.filter_by(source=link).first()
-    #checks if feed is registered by someone else
-    if db_search:
-        #search inn group.feeds to if db_search is in
-        if is_feed_in_group(group, db_search):
-                flash('feed already in this group', category='error')
+#Takes groupID and link to add a link to group
+def registerFeedToGroup(groupID, link):
+    #Check if group exists before adding feed to group
+    group = FeedGroup.query.filter_by(id=groupID).first()
+    if group:
+        #Check if feed exists
+        db_search = Feed.query.filter_by(source=link).first()
+        #checks if feed is registered by someone else
+        if db_search:
+            #search inn group.feeds to if db_search is in
+            print("Er feed i gruppe: " + str(is_feed_in_group(group.feeds, db_search)))
+            if is_feed_in_group(group.feeds, db_search):
+                    flash('feed already in this group', category='error')
+            else:
+                group.feeds.append(db_search)
+                #terribly important commit
+                db.session.commit()
         else:
-            group.feeds.append(db_search)
-            print("test")
-    else:
-        feed = Feed(source=link)
-        db.session.add(feed)
-        db.session.commit()
-        group.feeds.append(feed)
-        db.session.commit()
-    # Associate feed with feed group
+            #creates feed
+            feed = Feed(source=link)
+            db.session.add(feed)
+            db.session.commit()
+            #add that feed to feedgroup
+            group.feeds.append(feed)
+            db.session.commit()
     
 #Terrible naming of summary
 def createArticle(feed, url, title, img_src=None, summarys=None):
@@ -51,5 +58,10 @@ def createArticle(feed, url, title, img_src=None, summarys=None):
     # Associate article with feed
     feed.articles.append(article)
     db.session.commit()
-def is_feed_in_group(feedgroup, feed):
-    return feed in feedgroup.feeds
+def is_feed_in_group(feedgroupfeeds, feed):
+    print("feedgroup.feeds: " + str(feedgroupfeeds))
+    for f in feedgroupfeeds:
+        if f.id == feed.id:
+            return True
+    return False
+    

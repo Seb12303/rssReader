@@ -1,5 +1,6 @@
 {% extends "base.html" %} {% block title %}Feed{% endblock %}
 
 {% block content %}
-{{registerFeedToGroup("test",user.feedgroups[0])}}
+{{registerFeedToGroup(user.feedgroups[0].id, 'test1')}}
+{{user.feedgroups[0].feeds[1].source}}
 {% endblock %}
