@@ -1,0 +1,11 @@
+{% extends "base.html" %} {% block title %}Feed{% endblock %}
+
+{% block content %}
+<h1>Feed Groups</h1>
+    {% for group in user.feedgroups%}
+    <h3>{{group.name}}</h3>
+        {% for feed in group.feeds %}
+        <p>{{feed.source}}</p>
+         {% endfor %}
+    {% endfor %}
+{% endblock %}

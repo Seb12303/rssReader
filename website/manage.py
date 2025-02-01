@@ -1,14 +1,32 @@
-from flask import Blueprint, render_template, request, flash
+from flask import Blueprint, render_template, request, flash, redirect, url_for
 from flask_login import login_required, current_user
 from website.models import *
 from website import db
 
 manage = Blueprint('manage', __name__)
 
+#routes first!
+
 @manage.route('/manage')
 @login_required
 def manageFeed():
     return render_template('manage.html', createFeedGroup=createFeedGroup, registerFeedToGroup=registerFeedToGroup, user=current_user)
+
+@manage.route('/add_group', methods=['POST'])
+def add_group():
+    new_group_name = request.form.get('group_name')
+    if new_group_name:
+        createFeedGroup(current_user, new_group_name)
+    return redirect(url_for('manage.manage'))
+
+@manage.route('/delete_group/<int:group_id>', methods=['POST'])
+def delete_group(group_id):
+    #Delete group.
+    group = FeedGroup.query.filter_by(id=group_id).first()
+    db.session.delete(group)
+    db.session.commit()
+    return redirect(url_for('manage.manageFeed'))
+
 
 def createFeedGroup(user, groupname):
     feedgroup = FeedGroup(name=groupname, owner=user.id, public=False)
@@ -58,6 +76,7 @@ def createArticle(feed, url, title, img_src=None, summarys=None):
     # Associate article with feed
     feed.articles.append(article)
     db.session.commit()
+
 def is_feed_in_group(feedgroupfeeds, feed):
     print("feedgroup.feeds: " + str(feedgroupfeeds))
     for f in feedgroupfeeds:
