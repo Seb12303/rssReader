@@ -6,6 +6,8 @@ auth = Blueprint('auth', __name__)
 
 @auth.route('/login', methods=['GET','POST'])
 def login():
+    if current_user.is_authenticated:
+            return redirect(url_for('feeds.feed'))
     if request.method == 'POST':
         email=request.form.get('email')
         password=request.form.get('password')
@@ -13,13 +15,13 @@ def login():
         user = models.User.query.filter_by(email=email).first()
         if user:
             if check_password_hash(user.password, password):
-                flash('Logged in successfully', category='success')
+                #flash('Logged in successfully', category='success')
                 login_user(user, remember=True)
+                return redirect(url_for('feeds.feed'))
             else:
                 flash('Incorrect password', category='error')
         else:
             flash('Email does not exist', category='error')
-
     return render_template('login.html', user=current_user)
 
 @auth.route('logout')
@@ -29,7 +31,9 @@ def logout():
     return redirect(url_for('auth.login'))
 @auth.route('/sign-up', methods=['GET','POST'])
 def sign_up():
-    if request.method == 'POST':    
+    if request.method == 'POST':
+        if current_user.is_authenticated:
+            return redirect(url_for('feeds.feed'))
         first_name = request.form.get('firstName')
         email = request.form.get('email')
         password_1 = request.form.get('password1')
@@ -49,6 +53,6 @@ def sign_up():
             db.session.add(new_user)
             db.session.commit()
             login_user(new_user, remember=True)
-            flash("Account created!", category='success')
+            #flash("Account created!", category='success')
             return redirect(url_for('views.home'))
     return render_template('sign_up.html', user=current_user)

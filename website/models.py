@@ -32,6 +32,7 @@ class User(db.Model, UserMixin):
     email = db.Column(db.String(150), unique=True, nullable=False)
     password = db.Column(db.String(150), nullable=False)
     first_name = db.Column(db.String(150), nullable=False)
+    active_group = db.Column(db.Integer)
 
     feedgroups = db.relationship('FeedGroup')
 

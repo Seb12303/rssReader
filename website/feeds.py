@@ -1,9 +1,10 @@
-from flask import Blueprint, render_template, request
+from flask import Blueprint, render_template, request, redirect, url_for
 import feedparser
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse
 from website.timezoneConverter import time_since
 import requests
+from website.models import *
 from website.summarizeGPT import getSummary as chatSummary
 from flask_login import login_required, current_user
 
@@ -11,12 +12,30 @@ feeds = Blueprint('feeds', __name__)
 
 @feeds.route('/feed')
 def feed():
-    #links=['https://www.vg.no/rss/feed','https://www.theverge.com/rss/index.xml','https://www.nrk.no/toppsaker.rss','https://www.tv2.no/rss/nyheter','https://www.theguardian.com/us/rss']
-    links=['https://www.vg.no/rss/feed']
-    articles = get_articles(links)
+    links=['https://www.vg.no/rss/feed','https://www.theverge.com/rss/index.xml','https://www.nrk.no/toppsaker.rss','https://www.tv2.no/rss/nyheter','https://www.theguardian.com/us/rss']
+        
     user_timezone = request.args.get('timezone', 'UTC')
 
+    #If user is logged in, has chosen a specific feedgroup and that feedgroup exists: Show that feedgroup
+    if (current_user.is_authenticated) and (current_user.active_group is not None) and (FeedGroup.query.filter_by(id=current_user.active_group).first() is not None):
+        links=[]
+        for feed in FeedGroup.query.filter_by(id=current_user.active_group).first().feeds:
+            links.append(feed.source)
+        articles = get_articles(links)
+        return render_template('feed.html', artikler=articles, hentBilde=hentBilde, hentSummary=hentSummary, hentDomain=hentDomain, hentTid=hentTid, user_timezone=user_timezone, user=current_user)
+    #If not then simply show the default feed
+    articles = get_articles(links)
     return render_template('feed.html', artikler=articles, hentBilde=hentBilde, hentSummary=hentSummary, hentDomain=hentDomain, hentTid=hentTid, user_timezone=user_timezone, user=current_user)
+
+@feeds.route('/cfeed/<int:group_id>', methods=['POST'])
+def cfeed(group_id):
+    if group_id == 111111111111111111111111111111:
+        current_user.active_group = None
+        db.session.commit()
+    else:
+        current_user.active_group = group_id
+        db.session.commit()
+    return redirect(url_for('feeds.feed'))
 
 
 
@@ -37,6 +56,14 @@ def get_articles(links):
 #returnerer "" hvis det ikke finnes bilde, eller bildeurl hvis det er bilde.
 def hentBilde(artikkel):
     url=""
+    #The Verge rss
+    if url == "":
+        try:
+            soup = BeautifulSoup(artikkel['summary'], "html.parser")
+            url = soup.find("img")['src']
+            return url
+        except:
+            pass
     #youtube (må før nrk) if url =="" er her egentlig unødvendig, men hvis disse blokkene skal flyttes senere er det greit å ha.
     if url == "":
         try:
@@ -47,14 +74,6 @@ def hentBilde(artikkel):
     if url == "":
         try:
             url = artikkel.media_content[-1]['url']
-        except:
-            pass
-    #The Verge rss
-    if url == "":
-        try:
-            soup = BeautifulSoup(artikkel['summary'], "html.parser")
-            url = soup.find("img")['src']
-            return url
         except:
             pass
     #VG:
@@ -99,7 +118,7 @@ def hentDomain(artikkel):
         print(f"Error processing article: {e}")
         return ""
 def hentTid(artikkel, tid):
-    return time_since(artikkel.published_parsed, tid) + " siden"
+    return time_since(artikkel.published_parsed, 'Europe/Oslo') + " siden"
 if __name__ == '__main__':
     a = get_articles(['https://www.youtube.com/feeds/videos.xml?channel_id=UCBa659QWEk1AI4Tg--mrJ2A'])
     print(a[0]['published_parsed'])

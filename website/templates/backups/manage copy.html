@@ -1,0 +1,76 @@
+{% extends "base.html" %} {% block title %}Feed{% endblock %}
+
+{% block content %}
+<div class="container">
+  <h1>Feed Groups</h1>
+
+  <!-- Button to trigger modal for adding a new group -->
+  <button type="button" class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#addGroupModal">
+    Add New Group
+  </button>
+  
+
+  <div class="row">
+    {% for group in user.feedgroups %}
+      <div class="col-md-4">
+        <div class="card mb-4">
+          <!-- Group Name & Delete Button -->
+          <div class="card-header">
+            {{ group.name }}
+            <form method="post" action="/delete_group/{{ group.id }}" class="d-inline">
+              <button type="submit" class="btn btn-danger btn-sm float-right">Delete</button>
+            </form>
+          </div>
+
+          <div class="card-body">
+            <!-- List of Feeds -->
+            <ul class="list-group">
+              {% for feed in group.feeds %}
+                <li class="list-group-item">
+                  {{ feed.source }}
+                  <form method="post" action="/remove_feed/{{ group.id }}/{{ feed.id }}" class="d-inline">
+                    <button class="btn btn-outline-danger btn-sm float-right">Remove</button>
+                </form>                
+                </li>
+              {% endfor %}
+            </ul>
+
+            <!-- Form to Add a New Feed -->
+            <form method="post" action="/add_feed/{{ group.id }}" class="mt-3">
+              <div class="input-group">
+                <input type="text" class="form-control" name="feed_source" placeholder="New Feed URL" required>
+                <div class="input-group-append">
+                  <button class="btn btn-success" type="submit">Add Feed</button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Modal for Adding a New Group -->
+<div class="modal fade" id="addGroupModal" tabindex="-1" role="dialog" aria-labelledby="addGroupModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <form method="post" action="/add_group">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Add New Group</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <input type="text" class="form-control" name="group_name" placeholder="Group Name" required>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Add Group</button>
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

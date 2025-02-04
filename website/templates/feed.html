@@ -1,13 +1,23 @@
 {% extends "base.html" %} {% block title %}Feed{% endblock %}
 
 {% block content %}
-<div class="container my-4">
-  <div class="row g-4">
-      {% for article in artikler %}
-      {% include 'items/article_card_big.html' %}
-      {% endfor %}
+  {% if user.is_authenticated %}
+    {% for group in user.feedgroups %}
+    <form method="post" action="/cfeed/{{ group.id }}" class="d-inline">
+      <button type="submit" class="btn btn-primary btn-sm float-right mb-2">{{group.name}}</button>
+    </form>
+    {% endfor %}
+    <form method="post" action="/cfeed/111111111111111111111111111111" class="d-inline">
+      <button type="submit" class="btn btn-primary btn-sm float-right mb-2">Standard</button>
+    </form>
+  {% endif %}
+  <div class="container my-4">
+    <div class="row g-4">
+        {% for article in artikler %}
+          {% include 'items/article_card_big.html' %}
+        {% endfor %}
+    </div>
   </div>
-</div>
 
 <!-- Bootstrap Modal -->
 {% include 'items/ModalBootstrapPopup.html' %}

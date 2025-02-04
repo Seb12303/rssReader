@@ -97,6 +97,18 @@
           });
         });
       });
-    </script>  
+    </script>
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+          const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+          const url = new URL(window.location);
+  
+          // Check if the 'timezone' parameter is already set
+          if (url.searchParams.get('timezone') !== timezone) {
+              url.searchParams.set('timezone', timezone);
+              window.location = url; // Redirect only if the timezone is missing or different
+          }
+      });
+  </script>    
   </body>
 </html>

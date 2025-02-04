@@ -2,28 +2,57 @@ from flask import Blueprint, render_template, request, flash, redirect, url_for
 from flask_login import login_required, current_user
 from website.models import *
 from website import db
+import re
 
 manage = Blueprint('manage', __name__)
 
-#routes first!
+#routes:
 
 @manage.route('/manage')
 @login_required
 def manageFeed():
-    return render_template('manage.html', createFeedGroup=createFeedGroup, registerFeedToGroup=registerFeedToGroup, user=current_user)
+    return render_template('manage.html', createFeedGroup=createFeedGroup, registerFeedToGroup=registerFeedToGroup, prettyUrl=prettyUrl, user=current_user)
 
+# Groups first
 @manage.route('/add_group', methods=['POST'])
 def add_group():
     new_group_name = request.form.get('group_name')
+    print("test")
     if new_group_name:
         createFeedGroup(current_user, new_group_name)
-    return redirect(url_for('manage.manage'))
+    return redirect(url_for('manage.manageFeed'))
 
 @manage.route('/delete_group/<int:group_id>', methods=['POST'])
 def delete_group(group_id):
     #Delete group.
     group = FeedGroup.query.filter_by(id=group_id).first()
     db.session.delete(group)
+    db.session.commit()
+    return redirect(url_for('manage.manageFeed'))
+
+@manage.route('/rename_group/<int:group_id>', methods=['POST'])
+def rename_group(group_id):
+    new_name = request.form.get('new_group_name')
+    if new_name:
+        group = FeedGroup.query.filter_by(id=group_id).first()
+        group.name=new_name
+        db.session.commit()
+    return redirect(url_for('manage.manageFeed'))
+
+
+#Then feeds
+
+@manage.route('/add_feed/<int:group_id>', methods=['POST'])
+def add_feed(group_id):
+    feed_source = request.form.get('feed_source')
+    registerFeedToGroup(group_id, feed_source)
+    return redirect(url_for('manage.manageFeed'))
+
+@manage.route('/remove_feed/<int:group_id>/<int:feed_id>', methods=['POST'])
+def remove_feed(group_id, feed_id):
+    group = FeedGroup.query.filter_by(id=group_id).first()
+    feed = Feed.query.filter_by(id=feed_id).first()
+    group.feeds.remove(feed)
     db.session.commit()
     return redirect(url_for('manage.manageFeed'))
 
@@ -35,6 +64,10 @@ def createFeedGroup(user, groupname):
 
 #Takes groupID and link to add a link to group
 def registerFeedToGroup(groupID, link):
+    if link.startswith('https://') or link.startswith('http://'):
+        pass
+    else:
+        link = "https://" + link
     #Check if group exists before adding feed to group
     group = FeedGroup.query.filter_by(id=groupID).first()
     if group:
@@ -84,3 +117,10 @@ def is_feed_in_group(feedgroupfeeds, feed):
             return True
     return False
     
+def prettyUrl(url):
+    #stjålet :( ikke bra
+    if url.startswith('http'):
+        url = re.sub(r'https?://', '', url)  # Corrected regex
+    if url.startswith('www.'):
+        url = re.sub(r'www\.', '', url)  # Escape dot properly
+    return url
