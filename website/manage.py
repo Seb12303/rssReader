@@ -3,6 +3,10 @@ from flask_login import login_required, current_user
 from website.models import *
 from website import db
 import re
+import requests
+import bs4
+from urllib.parse import urlparse
+
 
 manage = Blueprint('manage', __name__)
 
@@ -11,7 +15,7 @@ manage = Blueprint('manage', __name__)
 @manage.route('/manage')
 @login_required
 def manageFeed():
-    return render_template('manage.html', createFeedGroup=createFeedGroup, registerFeedToGroup=registerFeedToGroup, prettyUrl=prettyUrl, user=current_user)
+    return render_template('manage.html', createFeedGroup=createFeedGroup, registerFeedToGroup=registerFeedToGroup, prettyUrl=prettyUrl, getFeedIcon=getFeedIcon, user=current_user)
 
 # Groups first
 @manage.route('/add_group', methods=['POST'])
@@ -124,3 +128,17 @@ def prettyUrl(url):
     if url.startswith('www.'):
         url = re.sub(r'www\.', '', url)  # Escape dot properly
     return url
+
+# from urllib.parse import urlparse
+# import bs4
+# import requests
+def getFeedIcon(url):
+    page = requests.get(url).content
+    soup = bs4.BeautifulSoup(page)
+    icon_link = soup.find("link", rel="shortcut icon")
+    if icon_link is None:
+        icon_link = requests.get("https://" + urlparse(url).netloc + '/favicon.ico').content
+        if icon_link is None:
+            print(":()")
+    return icon_link
+# print(getFeedIcon('https://theguardian.com'))

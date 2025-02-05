@@ -35,12 +35,14 @@
             <!-- List of Feeds -->
             <ul class="list-group">
               {% for feed in group.feeds %}
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                  {{ prettyUrl(feed.source) }}
-                  <form method="post" action="/remove_feed/{{ group.id }}/{{ feed.id }}" class="mb-0">
-                    <button class="btn btn-outline-danger btn-sm">Remove</button>
-                  </form>
-                </li>
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                <img src="{{getFeedIcon(feed.source)}}" class="rounded" style="margin-right: 5px;">
+                <span class="flex-grow-1 text-break">{{ prettyUrl(feed.source) }}</span>
+                <form method="post" action="/remove_feed/{{ group.id }}/{{ feed.id }}" class="mb-0">
+                  <button class="btn btn-outline-danger btn-sm">Remove</button>
+                </form>
+              </li>
+              
               {% endfor %}
             </ul>
 
