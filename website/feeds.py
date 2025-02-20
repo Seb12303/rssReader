@@ -7,6 +7,7 @@ import requests
 from website.models import *
 from website.summarizeGPT import getSummary as chatSummary
 from flask_login import login_required, current_user
+from website.manage import getFeedIcon
 
 feeds = Blueprint('feeds', __name__)
 

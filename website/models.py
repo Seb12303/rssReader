@@ -45,7 +45,6 @@ class Article(db.Model):
     published_date = db.Column(db.DateTime, default=func.now())
     img_link = db.Column(db.String(1000), nullable=True)
     summary = db.Column(db.String(10000), nullable=True)
-
     feeds = db.relationship('Feed', secondary=article_feed_association, back_populates='articles')
 
 class Feed(db.Model):
@@ -53,7 +52,8 @@ class Feed(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     source = db.Column(db.String(1000), unique=True)
-    icon=db.Column(db.String(1000))
 
     articles = db.relationship('Article', secondary=article_feed_association, back_populates='feeds')
     feedgroups = db.relationship('FeedGroup', secondary=feedgroup_feed_association, back_populates='feeds')
+
+

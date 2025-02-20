@@ -6,7 +6,7 @@ import re
 import requests
 import bs4
 from urllib.parse import urlparse
-
+import base64
 
 manage = Blueprint('manage', __name__)
 
@@ -129,16 +129,11 @@ def prettyUrl(url):
         url = re.sub(r'www\.', '', url)  # Escape dot properly
     return url
 
-# from urllib.parse import urlparse
-# import bs4
-# import requests
 def getFeedIcon(url):
-    page = requests.get(url).content
-    soup = bs4.BeautifulSoup(page)
-    icon_link = soup.find("link", rel="shortcut icon")
-    if icon_link is None:
+    try:
         icon_link = requests.get("https://" + urlparse(url).netloc + '/favicon.ico').content
-        if icon_link is None:
-            print(":()")
-    return icon_link
-# print(getFeedIcon('https://theguardian.com'))
+        icon_link = base64.b64encode(icon_link).decode('utf-8')
+        icon_link = f"data:image/x-icon;base64,{icon_link}"
+        return icon_link
+    except:
+        return None
