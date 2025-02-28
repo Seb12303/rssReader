@@ -33,6 +33,7 @@ class User(db.Model, UserMixin):
     password = db.Column(db.String(150), nullable=False)
     first_name = db.Column(db.String(150), nullable=False)
     active_group = db.Column(db.Integer)
+    settings = db.Column(db.String(1000))
 
     feedgroups = db.relationship('FeedGroup')
 
@@ -52,6 +53,7 @@ class Feed(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     source = db.Column(db.String(1000), unique=True)
+    icon = db.Column(db.String(5000))
 
     articles = db.relationship('Article', secondary=article_feed_association, back_populates='feeds')
     feedgroups = db.relationship('FeedGroup', secondary=feedgroup_feed_association, back_populates='feeds')

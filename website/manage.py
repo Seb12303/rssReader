@@ -7,6 +7,8 @@ import requests
 import bs4
 from urllib.parse import urlparse
 import base64
+import feedparser
+import validators
 
 manage = Blueprint('manage', __name__)
 
@@ -90,6 +92,7 @@ def registerFeedToGroup(groupID, link):
         else:
             #creates feed
             feed = Feed(source=link)
+            feed.icon = getFeedIcon(link)
             db.session.add(feed)
             db.session.commit()
             #add that feed to feedgroup
@@ -130,6 +133,27 @@ def prettyUrl(url):
     return url
 
 def getFeedIcon(url):
+    # #Checking the feeds selfdefined image. 
+    # try:
+    #     image_url = feedparser.parse(url)['feed']['image']['href']
+    #     return image_url
+    # except:
+    #     pass
+
+    #Getting the favicon
+    try:
+        #Very slow but it works !!
+        site = bs4.BeautifulSoup(requests.get("https://" + urlparse(url).netloc).content, 'html.parser')
+        apple_icon = site.find("link", rel="apple-touch-icon")
+
+        #Needs fixing for when there isnt a good link. Getting 404 images on theverge
+        if apple_icon:
+            link = apple_icon.get('href')
+        assert validators.url(link)
+        return link
+        
+    except:
+        pass
     try:
         icon_link = requests.get("https://" + urlparse(url).netloc + '/favicon.ico').content
         icon_link = base64.b64encode(icon_link).decode('utf-8')
@@ -137,3 +161,6 @@ def getFeedIcon(url):
         return icon_link
     except:
         return None
+            
+
+    

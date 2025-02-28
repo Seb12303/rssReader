@@ -23,10 +23,10 @@ def feed():
         for feed in FeedGroup.query.filter_by(id=current_user.active_group).first().feeds:
             links.append(feed.source)
         articles = get_articles(links)
-        return render_template('feed.html', artikler=articles, hentBilde=hentBilde, hentSummary=hentSummary, hentDomain=hentDomain, hentTid=hentTid, user_timezone=user_timezone, user=current_user)
+        return render_template('feed.html', artikler=articles, hentBilde=hentBilde, hentSummary=hentSummary, hentDomain=hentDomain, hentTid=hentTid, user_timezone=user_timezone, getFeedIcon=getFeedIcon, user=current_user)
     #If not then simply show the default feed
     articles = get_articles(links)
-    return render_template('feed.html', artikler=articles, hentBilde=hentBilde, hentSummary=hentSummary, hentDomain=hentDomain, hentTid=hentTid, user_timezone=user_timezone, user=current_user)
+    return render_template('feed.html', artikler=articles, hentBilde=hentBilde, hentSummary=hentSummary, hentDomain=hentDomain, hentTid=hentTid, user_timezone=user_timezone, getFeedIcon=getFeedIcon, user=current_user)
 
 @feeds.route('/cfeed/<int:group_id>', methods=['POST'])
 def cfeed(group_id):
@@ -44,10 +44,13 @@ def get_articles(links):
     articles = []
     for link in links:
         feed = feedparser.parse(link)
+        #input feedicon_link til article her
         for article in feed['entries']:
             try:
                 article['link']
                 article['published_parsed']
+                article['iconUrl'] = Feed.query.filter_by(source = link).first().icon
+                article['bilde'] = hentBilde(article)
                 articles.append(article)
             except:
                 print("Bad article, no link")
