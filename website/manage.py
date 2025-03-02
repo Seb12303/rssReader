@@ -99,24 +99,6 @@ def registerFeedToGroup(groupID, link):
             group.feeds.append(feed)
             db.session.commit()
     
-#Terrible naming of summary
-def createArticle(feed, url, title, img_src=None, summarys=None):
-    article = Article(
-        link=url,
-        title=title
-    )
-    if img_src is not None:
-        article.img_link=img_src
-    if summarys is not None:
-        article.summary=summarys
-    
-    db.session.add(article)
-    db.session.commit()
-
-    # Associate article with feed
-    feed.articles.append(article)
-    db.session.commit()
-
 def is_feed_in_group(feedgroupfeeds, feed):
     print("feedgroup.feeds: " + str(feedgroupfeeds))
     for f in feedgroupfeeds:
@@ -162,5 +144,3 @@ def getFeedIcon(url):
     except:
         return None
             
-
-    

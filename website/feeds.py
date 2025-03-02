@@ -8,6 +8,8 @@ from website.models import *
 from website.summarizeGPT import getSummary as chatSummary
 from flask_login import login_required, current_user
 from website.manage import getFeedIcon
+from website.convArticle import convArticle
+from datetime import datetime
 
 feeds = Blueprint('feeds', __name__)
 
@@ -19,13 +21,11 @@ def feed():
 
     #If user is logged in, has chosen a specific feedgroup and that feedgroup exists: Show that feedgroup
     if (current_user.is_authenticated) and (current_user.active_group is not None) and (FeedGroup.query.filter_by(id=current_user.active_group).first() is not None):
-        links=[]
-        for feed in FeedGroup.query.filter_by(id=current_user.active_group).first().feeds:
-            links.append(feed.source)
-        articles = get_articles(links)
+        #get articles for a feedgroup
+        articles = get_articles(current_user.active_group)
         return render_template('feed.html', artikler=articles, hentBilde=hentBilde, hentSummary=hentSummary, hentDomain=hentDomain, hentTid=hentTid, user_timezone=user_timezone, getFeedIcon=getFeedIcon, user=current_user)
     #If not then simply show the default feed
-    articles = get_articles(links)
+    articles = get_articles(2)
     return render_template('feed.html', artikler=articles, hentBilde=hentBilde, hentSummary=hentSummary, hentDomain=hentDomain, hentTid=hentTid, user_timezone=user_timezone, getFeedIcon=getFeedIcon, user=current_user)
 
 @feeds.route('/cfeed/<int:group_id>', methods=['POST'])
@@ -40,11 +40,10 @@ def cfeed(group_id):
 
 
 
-def get_articles(links):
+""" def get_articles(links):
     articles = []
     for link in links:
         feed = feedparser.parse(link)
-        #input feedicon_link til article her
         for article in feed['entries']:
             try:
                 article['link']
@@ -54,8 +53,17 @@ def get_articles(links):
                 articles.append(article)
             except:
                 print("Bad article, no link")
-    return sorted(articles, key=lambda hl: hl.get('published_parsed', None), reverse=True)
+    return sorted(articles, key=lambda hl: hl.get('published_parsed', None), reverse=True) """
+def get_articles(feed_group_id):
+    articles=[]
+    for feed in FeedGroup.query.filter_by(id=feed_group_id).first().feeds:
+        for article in feed.articles[:50]:
+            converted = convArticle(title=article.title, link=article.link, bilde=article.img_link,icon=feed.icon, domain=hentDomain(article), published_parsed=article.published_date.timetuple())
+            articles.append(converted)
+    return sorted(articles, key=lambda hl: hl.published_parsed, reverse=True)
 
+
+    
 
 #returnerer "" hvis det ikke finnes bilde, eller bildeurl hvis det er bilde.
 def hentBilde(artikkel):
@@ -123,6 +131,7 @@ def hentDomain(artikkel):
         return ""
 def hentTid(artikkel, tid):
     return time_since(artikkel.published_parsed, 'Europe/Oslo') + " siden"
+
 if __name__ == '__main__':
     a = get_articles(['https://www.youtube.com/feeds/videos.xml?channel_id=UCBa659QWEk1AI4Tg--mrJ2A'])
     print(a[0]['published_parsed'])
