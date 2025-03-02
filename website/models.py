@@ -53,7 +53,7 @@ class Feed(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     source = db.Column(db.String(1000), unique=True)
-    icon = db.Column(db.String(5000))
+    icon = db.Column(db.String(70000))
 
     articles = db.relationship('Article', secondary=article_feed_association, back_populates='feeds')
     feedgroups = db.relationship('FeedGroup', secondary=feedgroup_feed_association, back_populates='feeds')

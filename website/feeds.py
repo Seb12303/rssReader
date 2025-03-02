@@ -106,7 +106,13 @@ def hentSummary(artikkel):
         basic = artikkel.summary
         soup = BeautifulSoup(basic, "html.parser")
         summary = soup.getText()
-        return summary
+        if len(summary) > 1:
+            return summary
+    except:
+        pass
+    try:
+        if len(artikkel.content) > 1:
+            return artikkel.content
     except:
         pass
     return ""
