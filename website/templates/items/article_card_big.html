@@ -21,14 +21,14 @@
           <a href="{{ article.link }}" style="color:black;">{{ article.title }}</a>
         </h5>
         <p class="card-text text-truncate" style="max-height: 5rem; overflow: hidden;">
-          {{ hentSummary(article) }}
+          {{ article.summary }}
         </p>
         <button type="button" class="btn btn-primary mt-auto view-article-btn" 
                 data-bs-toggle="modal" 
                 data-bs-target="#articleModal"
                 data-title="{{ article.title }}"
                 data-image="{{ article.bilde }}"
-                data-summary="{{ hentSummary(article) }}"
+                data-summary="{{ article.summary }}"
                 data-link="{{ article.link }}">
           Vis mer
         </button>

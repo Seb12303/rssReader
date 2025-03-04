@@ -58,7 +58,7 @@ def get_articles(feed_group_id):
     articles=[]
     for feed in FeedGroup.query.filter_by(id=feed_group_id).first().feeds:
         for article in feed.articles[:50]:
-            converted = convArticle(title=article.title, link=article.link, bilde=article.img_link,icon=feed.icon, domain=hentDomain(article), published_parsed=article.published_date.timetuple())
+            converted = convArticle(title=article.title, link=article.link, bilde=article.img_link,icon=feed.icon, domain=hentDomain(article), published_parsed=article.published_date.timetuple(), summary=article.summary)
             articles.append(converted)
     return sorted(articles, key=lambda hl: hl.published_parsed, reverse=True)
 
