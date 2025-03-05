@@ -14,9 +14,7 @@ from datetime import datetime
 feeds = Blueprint('feeds', __name__)
 
 @feeds.route('/feed')
-def feed():
-    links=['https://www.vg.no/rss/feed','https://www.theverge.com/rss/index.xml','https://www.nrk.no/toppsaker.rss','https://www.tv2.no/rss/nyheter','https://www.theguardian.com/us/rss']
-        
+def feed():        
     user_timezone = request.args.get('timezone', 'UTC')
 
     #If user is logged in, has chosen a specific feedgroup and that feedgroup exists: Show that feedgroup
@@ -57,7 +55,7 @@ def cfeed(group_id):
 def get_articles(feed_group_id):
     articles=[]
     for feed in FeedGroup.query.filter_by(id=feed_group_id).first().feeds:
-        for article in feed.articles[:50]:
+        for article in feed.articles[-50:]:
             converted = convArticle(title=article.title, link=article.link, bilde=article.img_link,icon=feed.icon, domain=hentDomain(article), published_parsed=article.published_date.timetuple(), summary=article.summary)
             articles.append(converted)
     return sorted(articles, key=lambda hl: hl.published_parsed, reverse=True)

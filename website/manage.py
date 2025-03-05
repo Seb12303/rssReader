@@ -115,20 +115,12 @@ def prettyUrl(url):
     return url
 
 def getFeedIcon(url):
-    # #Checking the feeds selfdefined image. 
-    # try:
-    #     image_url = feedparser.parse(url)['feed']['image']['href']
-    #     return image_url
-    # except:
-    #     pass
-
     #Getting the favicon
     try:
         #Very slow but it works !!
         site = bs4.BeautifulSoup(requests.get("https://" + urlparse(url).netloc).content, 'html.parser')
         apple_icon = site.find("link", rel="apple-touch-icon")
 
-        #Needs fixing for when there isnt a good link. Getting 404 images on theverge
         if apple_icon:
             link = apple_icon.get('href')
         assert validators.url(link)
@@ -142,5 +134,12 @@ def getFeedIcon(url):
         icon_link = f"data:image/x-icon;base64,{icon_link}"
         return icon_link
     except:
+        pass
+    # #Checking the feeds selfdefined image. 
+    try:
+        image_url = feedparser.parse(url)['feed']['image']['href']
+        return image_url
+    except:
         return None
+
             
