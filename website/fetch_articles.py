@@ -3,6 +3,11 @@ from website.models import *
 from website import db
 import feedparser
 from datetime import datetime
+import requests
+from website.summarizeGPT import getSummary as chatSummary
+from website.cleanArticle import get_clean_text
+import re
+import json
 
 def hentBilde(artikkel):
     url=""
@@ -40,7 +45,6 @@ def hentBilde(artikkel):
     return url
 def hentSummary(artikkel):
     try:
-        #return hentSummaryWeb(artikkel)
         basic = artikkel.summary
         soup = BeautifulSoup(basic, "html.parser")
         summary = soup.getText()
@@ -48,9 +52,53 @@ def hentSummary(artikkel):
     except:
         pass
     return ""
+def hentSummaryWeb(artikkel):
+    try:
+        cleaned = get_clean_text(artikkel.link)
+        return chatSummary(cleaned)
+    except:
+        return ""
+
+def convert_to_html_format(text):
+    # Konverterer overskrifter (##)
+    text = re.sub(r"## (.+)", r"<strong>\1</strong>", text)
+    
+    # Konverterer argumentene med fet tekst
+    text = re.sub(r"\*\*([^\*]+)\*\*", r"<strong>\1</strong>", text)
+    
+    # Konverterer punktlister
+    text = re.sub(r"\* (.+)", r"<ul><li>\1</li></ul>", text)
+    
+    # Returnerer den konverterte HTML-strengen
+    return text
+
+def extract_json(text):
+    start = text.find('{')  # Find the first occurrence of '{'
+    if start == -1:
+        return None  # No JSON found
+
+    stack = []
+    for i in range(start, len(text)):
+        if text[i] == '{':
+            stack.append('{')
+        elif text[i] == '}':
+            stack.pop()
+            if not stack:  # Found the matching closing '}'
+                return text[start:i+1]
+    
+    return None  # No valid JSON found
+
+def getScore(artikkel):
+    for i in range(1,5):
+        try:
+            text = hentSummaryWeb(artikkel)
+            return text["overall_importance_score"]
+        except Exception as e:
+            print(e)
+    return None
 
 #Terrible naming of summary
-def createArticle(feed, url, title, published_parsed, img_src=None, summarys=None):
+def createArticle(feed, url, title, published_parsed, img_src=None, summarys=None, score=None):
     article = Article(
         link=url,
         title=title,
@@ -60,6 +108,8 @@ def createArticle(feed, url, title, published_parsed, img_src=None, summarys=Non
         article.img_link=img_src
     if summarys is not None:
         article.summary=summarys
+    if score is not None:
+        article.score = score
     
     db.session.add(article)
     db.session.commit()
@@ -67,7 +117,6 @@ def createArticle(feed, url, title, published_parsed, img_src=None, summarys=Non
     # Associate article with feed
     feed.articles.append(article)
     db.session.commit()
-
 
 def fetch_articles(app):
     with app.app_context():
@@ -84,7 +133,10 @@ def fetch_articles(app):
                             print(type(published))
                             icon_url = article['iconUrl'] = feed.icon
                             bilde = article['bilde'] = hentBilde(article)
-                            createArticle(feed, link, article.title, img_src=bilde, summarys=hentSummary(article), published_parsed=published)
+                            #Med ai:
+                            #createArticle(feed, link, article.title, img_src=bilde, summarys=convert_to_html_format(hentSummary(article)), published_parsed=published, score=getScore(article))
+                            #Uten ai:
+                            createArticle(feed, link, article.title, img_src=bilde, summarys=convert_to_html_format(hentSummary(article)), published_parsed=published)
                         except Exception as e:
                             pass
                 

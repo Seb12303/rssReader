@@ -1,7 +1,7 @@
 <div class="col-12 mb-1">
     <div class="d-flex align-items-center border p-2">
-      {% if hentBilde(article) != "" %}
-      <img src="{{ hentBilde(article) }}" alt="{{ article.title }}" style="object-fit: cover;height: 40px;width: 40px;margin-right: 10px;">
+      {% if article.bilde != "" %}
+      <img src="{{ article.bilde }}" alt="{{ article.title }}" style="object-fit: cover;height: 40px;width: 40px;margin-right: 10px;">
       {% endif %}
       <div class="d-flex flex-column flex-grow-1">
         <div class="d-flex justify-content-between align-items-center">

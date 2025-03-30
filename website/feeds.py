@@ -1,30 +1,22 @@
 from flask import Blueprint, render_template, request, redirect, url_for
-import feedparser
-from bs4 import BeautifulSoup
 from urllib.parse import urlparse
 from website.timezoneConverter import time_since
-import requests
 from website.models import *
-from website.summarizeGPT import getSummary as chatSummary
 from flask_login import login_required, current_user
-from website.manage import getFeedIcon
 from website.convArticle import convArticle
-from datetime import datetime
 
 feeds = Blueprint('feeds', __name__)
 
 @feeds.route('/feed')
-def feed():        
-    user_timezone = request.args.get('timezone', 'UTC')
-
+def feed():
     #If user is logged in, has chosen a specific feedgroup and that feedgroup exists: Show that feedgroup
     if (current_user.is_authenticated) and (current_user.active_group is not None) and (FeedGroup.query.filter_by(id=current_user.active_group).first() is not None):
         #get articles for a feedgroup
         articles = get_articles(current_user.active_group)
-        return render_template('feed.html', artikler=articles, hentBilde=hentBilde, hentSummary=hentSummary, hentDomain=hentDomain, hentTid=hentTid, user_timezone=user_timezone, getFeedIcon=getFeedIcon, user=current_user)
+        return render_template('feed.html', artikler=articles, hentDomain=hentDomain, hentTid=hentTid, user=current_user)
     #If not then simply show the default feed
     articles = get_articles(2)
-    return render_template('feed.html', artikler=articles, hentBilde=hentBilde, hentSummary=hentSummary, hentDomain=hentDomain, hentTid=hentTid, user_timezone=user_timezone, getFeedIcon=getFeedIcon, user=current_user)
+    return render_template('feed.html', artikler=articles, hentDomain=hentDomain, hentTid=hentTid, user=current_user)
 
 @feeds.route('/cfeed/<int:group_id>', methods=['POST'])
 def cfeed(group_id):
@@ -36,92 +28,15 @@ def cfeed(group_id):
         db.session.commit()
     return redirect(url_for('feeds.feed'))
 
-
-
-""" def get_articles(links):
-    articles = []
-    for link in links:
-        feed = feedparser.parse(link)
-        for article in feed['entries']:
-            try:
-                article['link']
-                article['published_parsed']
-                article['iconUrl'] = Feed.query.filter_by(source = link).first().icon
-                article['bilde'] = hentBilde(article)
-                articles.append(article)
-            except:
-                print("Bad article, no link")
-    return sorted(articles, key=lambda hl: hl.get('published_parsed', None), reverse=True) """
 def get_articles(feed_group_id):
     articles=[]
     for feed in FeedGroup.query.filter_by(id=feed_group_id).first().feeds:
         for article in feed.articles[-50:]:
-            converted = convArticle(title=article.title, link=article.link, bilde=article.img_link,icon=feed.icon, domain=hentDomain(article), published_parsed=article.published_date.timetuple(), summary=article.summary)
+            converted = convArticle(title=article.title, link=article.link, bilde=article.img_link,icon=feed.icon, domain=hentDomain(article), published_parsed=article.published_date.timetuple(), summary=article.summary, score=article.score)
             articles.append(converted)
+    #return sorted(articles, key=lambda hl: hl.score if hl.score is not None else -1, reverse=True)
     return sorted(articles, key=lambda hl: hl.published_parsed, reverse=True)
 
-
-    
-
-#returnerer "" hvis det ikke finnes bilde, eller bildeurl hvis det er bilde.
-def hentBilde(artikkel):
-    url=""
-    #The Verge rss
-    if url == "":
-        try:
-            soup = BeautifulSoup(artikkel['summary'], "html.parser")
-            url = soup.find("img")['src']
-            return url
-        except:
-            pass
-    #youtube (må før nrk) if url =="" er her egentlig unødvendig, men hvis disse blokkene skal flyttes senere er det greit å ha.
-    if url == "":
-        try:
-            url = artikkel.media_thumbnail[0]['url']
-        except:
-            pass
-    #nrk rss
-    if url == "":
-        try:
-            url = artikkel.media_content[-1]['url']
-        except:
-            pass
-    #VG:
-    if url == "":
-        try:
-            links = artikkel['links']
-            for x in links:
-                if x.type.startswith('img') or x.type.startswith("image"):
-                    url = x.href
-                    return url
-        except:
-            pass
-
-    return url
-def hentSummary(artikkel):
-    try:
-        #return hentSummaryWeb(artikkel)
-        basic = artikkel.summary
-        soup = BeautifulSoup(basic, "html.parser")
-        summary = soup.getText()
-        if len(summary) > 1:
-            return summary
-    except:
-        pass
-    try:
-        if len(artikkel.content) > 1:
-            return artikkel.content
-    except:
-        pass
-    return ""
-def hentSummaryWeb(artikkel):
-    try:
-        data = requests.get(artikkel.link).content
-        soup = BeautifulSoup(data, 'html.parser')
-        cleaned = soup.getText()
-        return chatSummary(cleaned)
-    except:
-        return ""
 def hentDomain(artikkel):
     try:
         #Tries to get domain name from link in article

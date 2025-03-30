@@ -43,9 +43,10 @@ class Article(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     link = db.Column(db.String(1000), unique=True, nullable=False)
     title = db.Column(db.String(500), nullable=False)
-    published_date = db.Column(db.DateTime, default=func.now()) #Her er feilen. Hardcoda tid
+    published_date = db.Column(db.DateTime, default=func.now())
     img_link = db.Column(db.String(1000), nullable=True)
     summary = db.Column(db.String(10000), nullable=True)
+    score = db.Column(db.Float, nullable=True)
     feeds = db.relationship('Feed', secondary=article_feed_association, back_populates='articles')
 
 class Feed(db.Model):

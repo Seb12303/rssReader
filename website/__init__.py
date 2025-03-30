@@ -33,6 +33,7 @@ def create_app():
     login_manager.login_view = 'auth.login'
     login_manager.init_app(app)
 
+    #Initiate Background task for getting data.
     @login_manager.user_loader
     def load_user(id):
         return models.User.query.get(int(id))

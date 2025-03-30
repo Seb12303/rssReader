@@ -86,13 +86,13 @@
             // Get data attributes from the clicked button
             const title = button.getAttribute('data-title');
             const image = button.getAttribute('data-image');
-            const summary = button.getAttribute('data-summary');
+            const summary = button.getAttribute('data-summary').replace(/\n/g, "<br>");
             const link = button.getAttribute('data-link');
     
             // Populate modal content
             document.getElementById('articleModalLabel').textContent = title;
             document.getElementById('articleImage').src = image || '';  // Use empty string if no image
-            document.getElementById('articleSummary').textContent = summary;
+            document.getElementById('articleSummary').innerHTML = summary;
             document.getElementById('articleLink').href = link;
           });
         });

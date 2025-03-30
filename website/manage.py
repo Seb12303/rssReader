@@ -105,7 +105,8 @@ def is_feed_in_group(feedgroupfeeds, feed):
         if f.id == feed.id:
             return True
     return False
-    
+
+#Litt annerledes enn getDomain, kunne vært samme funksjon med parameter.
 def prettyUrl(url):
     #stjålet :( ikke bra
     if url.startswith('http'):
@@ -114,6 +115,9 @@ def prettyUrl(url):
         url = re.sub(r'www\.', '', url)  # Escape dot properly
     return url
 
+
+
+#Her hentes feed icon, og blir lagret når feeden blir laget.
 def getFeedIcon(url):
     #Getting the favicon
     try:
@@ -141,5 +145,6 @@ def getFeedIcon(url):
         return image_url
     except:
         return None
+    
 
             
