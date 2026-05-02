@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+{% block title %}Scoring Systems{% endblock %}
+
+{% block content %}
+<div class="container">
+  <h1 class="mb-4">Scoring Systems</h1>
+
+  <!-- Default system (read-only) -->
+  {% if default %}
+  <div class="card mb-4 border-primary">
+    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+      <strong>{{ default.name }}</strong>
+      <span class="badge bg-light text-primary">Built-in</span>
+    </div>
+    <div class="card-body">
+      <p class="mb-0" style="white-space: pre-wrap; font-size: 0.9rem;">{{ default.prompt }}</p>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- User's custom systems -->
+  <h2 class="mb-3">My Scoring Systems</h2>
+
+  {% for system in user_systems %}
+  <div class="card mb-3">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <strong>{{ system.name }}</strong>
+      <div class="d-flex gap-2">
+        <button class="btn btn-warning btn-sm"
+                data-bs-toggle="modal"
+                data-bs-target="#editModal{{ system.id }}">
+          Edit
+        </button>
+        <button class="btn btn-danger btn-sm"
+                data-bs-toggle="modal"
+                data-bs-target="#deleteModal{{ system.id }}">
+          Delete
+        </button>
+      </div>
+    </div>
+    <div class="card-body">
+      <p class="mb-0" style="white-space: pre-wrap; font-size: 0.9rem;">{{ system.prompt }}</p>
+    </div>
+  </div>
+
+  <!-- Edit Modal -->
+  <div class="modal fade" id="editModal{{ system.id }}" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <form method="post" action="/scoring/{{ system.id }}/update">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Edit: {{ system.name }}</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <label class="form-label">Name</label>
+              <input type="text" class="form-control" name="name" value="{{ system.name }}" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Scoring Prompt</label>
+              <textarea class="form-control"
+                        name="prompt"
+                        rows="7"
+                        id="prompt-{{ system.id }}">{{ system.prompt }}</textarea>
+              <div class="form-text">Describe what makes an article important. The AI will score 1-10 based on this.</div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button"
+                    class="btn btn-outline-secondary improve-btn me-auto"
+                    data-target="prompt-{{ system.id }}">
+              ✨ Improve with AI
+            </button>
+            <button type="submit" class="btn btn-primary">Save</button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Delete Modal -->
+  <div class="modal fade" id="deleteModal{{ system.id }}" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Delete "{{ system.name }}"?</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          This will remove all article scores computed with this system and detach it from any feed groups.
+        </div>
+        <div class="modal-footer">
+          <form method="post" action="/scoring/{{ system.id }}/delete">
+            <button type="submit" class="btn btn-danger">Delete</button>
+          </form>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+
+  {% if not user_systems %}
+  <p class="text-muted">No custom scoring systems yet. Create one below.</p>
+  {% endif %}
+
+  <!-- Create new -->
+  <hr class="my-4">
+  <h2 class="mb-3">Create New Scoring System</h2>
+  <div class="card">
+    <div class="card-body">
+      <form method="post" action="/scoring/create">
+        <div class="mb-3">
+          <label class="form-label">Name</label>
+          <input type="text" class="form-control" name="name" placeholder="e.g. Tech Focus, Breaking News" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Scoring Prompt</label>
+          <textarea class="form-control"
+                    name="prompt"
+                    rows="6"
+                    id="new-prompt"
+                    placeholder="Describe what makes an article important for your use case. Example: Score higher articles about technology, AI breakthroughs, and software engineering. Penalise celebrity gossip and sports unless they have broader social significance."
+                    required></textarea>
+          <div class="form-text">
+            The AI will score articles 1-10 based on your description. Use the ✨ Improve button to let AI refine your prompt.
+          </div>
+        </div>
+        <div class="d-flex gap-2">
+          <button type="button" class="btn btn-outline-secondary improve-btn" data-target="new-prompt">
+            ✨ Improve with AI
+          </button>
+          <button type="submit" class="btn btn-primary">Create</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+document.querySelectorAll('.improve-btn').forEach(function (btn) {
+  btn.addEventListener('click', async function () {
+    const targetId = btn.getAttribute('data-target');
+    const textarea = document.getElementById(targetId);
+    const original = textarea.value.trim();
+    if (!original) {
+      alert('Write a prompt first, then improve it.');
+      return;
+    }
+    btn.disabled = true;
+    const originalLabel = btn.textContent;
+    btn.textContent = 'Improving…';
+    try {
+      const res = await fetch('/scoring/improve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: original }),
+      });
+      const data = await res.json();
+      if (data.improved) {
+        textarea.value = data.improved;
+      } else {
+        alert('Could not improve prompt: ' + (data.error || 'unknown error'));
+      }
+    } catch (e) {
+      alert('Request failed: ' + e.message);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = originalLabel;
+    }
+  });
+});
+</script>
+{% endblock %}

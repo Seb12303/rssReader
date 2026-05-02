@@ -1,0 +1,25 @@
+ai:
+  # Any OpenAI-compatible /v1/chat/completions endpoint works here.
+  # Examples:
+  #   OpenRouter : https://openrouter.ai/api/v1/chat/completions
+  #   OpenAI     : https://api.openai.com/v1/chat/completions
+  #   Ollama     : http://localhost:11434/v1/chat/completions
+  #   LM Studio  : http://localhost:1234/v1/chat/completions
+  api_url: "https://openrouter.ai/api/v1/chat/completions"
+
+  api_key: "your-api-key-here"
+
+  model: "openai/gpt-4o-mini"
+
+  # Extra headers sent with every request (optional).
+  # Remove or leave empty if not using OpenRouter.
+  headers:
+    X-OpenRouter-Title: "RSS Reader"
+
+  # Request timeout in seconds
+  timeout: 30
+
+  # When true: only one LLM request at a time. User-facing requests (Improve prompt)
+  # get priority — scoring pauses between articles so they feel instant.
+  # Set to false if your backend handles concurrency fine (e.g. OpenRouter/OpenAI).
+  queue_scoring: false

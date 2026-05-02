@@ -12,12 +12,28 @@ import validators
 
 manage = Blueprint('manage', __name__)
 
-#routes:
+
+def _all_scoring_systems():
+    from website.models import ScoringSystem
+    from flask_login import current_user
+    systems = ScoringSystem.query.filter_by(is_default=True).all()
+    if current_user.is_authenticated:
+        systems += ScoringSystem.query.filter_by(owner_id=current_user.id).all()
+    return systems
+
 
 @manage.route('/manage')
 @login_required
 def manageFeed():
-    return render_template('manage.html', createFeedGroup=createFeedGroup, registerFeedToGroup=registerFeedToGroup, prettyUrl=prettyUrl, getFeedIcon=getFeedIcon, user=current_user)
+    return render_template(
+        'manage.html',
+        createFeedGroup=createFeedGroup,
+        registerFeedToGroup=registerFeedToGroup,
+        prettyUrl=prettyUrl,
+        getFeedIcon=getFeedIcon,
+        user=current_user,
+        all_scoring_systems=_all_scoring_systems(),
+    )
 
 # Groups first
 @manage.route('/add_group', methods=['POST'])
@@ -59,6 +75,19 @@ def remove_feed(group_id, feed_id):
     group = FeedGroup.query.filter_by(id=group_id).first()
     feed = Feed.query.filter_by(id=feed_id).first()
     group.feeds.remove(feed)
+    db.session.commit()
+    return redirect(url_for('manage.manageFeed'))
+
+
+@manage.route('/set_scoring/<int:group_id>', methods=['POST'])
+@login_required
+def set_scoring(group_id):
+    group = FeedGroup.query.filter_by(id=group_id, owner=current_user.id).first()
+    if not group:
+        return redirect(url_for('manage.manageFeed'))
+
+    new_ss_id = request.form.get('scoring_system_id', type=int)
+    group.scoring_system_id = new_ss_id or None
     db.session.commit()
     return redirect(url_for('manage.manageFeed'))
 

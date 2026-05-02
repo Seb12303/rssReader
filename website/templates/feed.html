@@ -2,15 +2,52 @@
 
 {% block content %}
   {% if user.is_authenticated %}
-    {% for group in user.feedgroups %}
-    <form method="post" action="/cfeed/{{ group.id }}" class="d-inline">
-      <button type="submit" class="btn btn-primary btn-sm float-right mb-2">{{group.name}}</button>
-    </form>
-    {% endfor %}
-    <form method="post" action="/cfeed/111111111111111111111111111111" class="d-inline">
-      <button type="submit" class="btn btn-primary btn-sm float-right mb-2">Standard</button>
-    </form>
+  <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+
+    <!-- Feedgroup selector -->
+    <div class="d-flex flex-wrap gap-1">
+      {% for group in user.feedgroups %}
+      <form method="post" action="/cfeed/{{ group.id }}" class="d-inline">
+        <button type="submit" class="btn btn-primary btn-sm {% if active_group and active_group.id == group.id %}active{% endif %}">{{ group.name }}</button>
+      </form>
+      {% endfor %}
+      <form method="post" action="/cfeed/111111111111111111111111111111" class="d-inline">
+        <button type="submit" class="btn btn-secondary btn-sm">Standard</button>
+      </form>
+    </div>
+
+    <!-- Scoring system dropdown -->
+    {% if scoring_systems %}
+    <div class="dropdown">
+      <button class="btn btn-outline-secondary btn-sm {% if not scoring_locked %}dropdown-toggle{% endif %}"
+              type="button" {% if not scoring_locked %}data-bs-toggle="dropdown"{% endif %}
+              {% if scoring_locked %}disabled{% endif %}>
+        {% if active_ss_name %}Score: {{ active_ss_name }}{% else %}No scoring{% endif %}
+      </button>
+      {% if not scoring_locked %}
+      <ul class="dropdown-menu">
+        {% for ss in scoring_systems %}
+        <li>
+          <a class="dropdown-item {% if ss.id == active_ss_id %}active{% endif %}"
+             href="/feed?ss={{ ss.id }}">
+            {{ ss.name }}
+          </a>
+        </li>
+        {% endfor %}
+        <li><hr class="dropdown-divider"></li>
+        <li>
+          <a class="dropdown-item {% if active_ss_id is none %}active{% endif %}" href="/feed?ss=0">
+            No scoring (date order)
+          </a>
+        </li>
+      </ul>
+      {% endif %}
+    </div>
+    {% endif %}
+
+  </div>
   {% endif %}
+
   <div class="container my-4">
     <div class="row g-4">
         {% for article in artikler %}
@@ -19,6 +56,5 @@
     </div>
   </div>
 
-<!-- Bootstrap Modal -->
 {% include 'items/ModalBootstrapPopup.html' %}
 {% endblock %}

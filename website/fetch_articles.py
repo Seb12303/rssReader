@@ -4,14 +4,14 @@ from website import db
 import feedparser
 from datetime import datetime
 import requests
-from website.summarizeGPT import getSummary as chatSummary
+from website.llm import getCustomScore
 from website.cleanArticle import get_clean_text
 import re
-import json
+
 
 def hentBilde(artikkel):
-    url=""
-    #The Verge rss
+    url = ""
+    # The Verge rss
     if url == "":
         try:
             soup = BeautifulSoup(artikkel['summary'], "html.parser")
@@ -19,19 +19,19 @@ def hentBilde(artikkel):
             return url
         except:
             pass
-    #youtube (må før nrk) if url =="" er her egentlig unødvendig, men hvis disse blokkene skal flyttes senere er det greit å ha.
+    # youtube (must come before nrk)
     if url == "":
         try:
             url = artikkel.media_thumbnail[0]['url']
         except:
             pass
-    #nrk rss
+    # nrk rss
     if url == "":
         try:
             url = artikkel.media_content[-1]['url']
         except:
             pass
-    #VG:
+    # VG
     if url == "":
         try:
             links = artikkel['links']
@@ -43,6 +43,8 @@ def hentBilde(artikkel):
             pass
 
     return url
+
+
 def hentSummary(artikkel):
     try:
         basic = artikkel.summary
@@ -52,94 +54,120 @@ def hentSummary(artikkel):
     except:
         pass
     return ""
-def hentSummaryWeb(artikkel):
-    try:
-        cleaned = get_clean_text(artikkel.link)
-        return chatSummary(cleaned)
-    except:
-        return ""
+
 
 def convert_to_html_format(text):
-    # Konverterer overskrifter (##)
     text = re.sub(r"## (.+)", r"<strong>\1</strong>", text)
-    
-    # Konverterer argumentene med fet tekst
     text = re.sub(r"\*\*([^\*]+)\*\*", r"<strong>\1</strong>", text)
-    
-    # Konverterer punktlister
     text = re.sub(r"\* (.+)", r"<ul><li>\1</li></ul>", text)
-    
-    # Returnerer den konverterte HTML-strengen
     return text
 
-def extract_json(text):
-    start = text.find('{')  # Find the first occurrence of '{'
-    if start == -1:
-        return None  # No JSON found
 
-    stack = []
-    for i in range(start, len(text)):
-        if text[i] == '{':
-            stack.append('{')
-        elif text[i] == '}':
-            stack.pop()
-            if not stack:  # Found the matching closing '}'
-                return text[start:i+1]
-    
-    return None  # No valid JSON found
-
-def getScore(artikkel):
-    for i in range(1,5):
-        try:
-            text = hentSummaryWeb(artikkel)
-            return text["overall_importance_score"]
-        except Exception as e:
-            print(e)
-    return None
-
-#Terrible naming of summary
-def createArticle(feed, url, title, published_parsed, img_src=None, summarys=None, score=None):
+def createArticle(feed, url, title, published_parsed, img_src=None, summarys=None):
     article = Article(
         link=url,
         title=title,
-        published_date = published_parsed
+        published_date=published_parsed
     )
     if img_src is not None:
-        article.img_link=img_src
+        article.img_link = img_src
     if summarys is not None:
-        article.summary=summarys
-    if score is not None:
-        article.score = score
-    
+        article.summary = summarys
+
     db.session.add(article)
     db.session.commit()
 
-    # Associate article with feed
     feed.articles.append(article)
     db.session.commit()
+    return article
+
+
+def compute_article_score(article, scoring_system) -> float | None:
+    try:
+        text = get_clean_text(article.link)
+    except Exception as e:
+        print(f"Failed to fetch content for scoring ({article.link}): {e}")
+        return None
+
+    for attempt in range(1, 4):
+        try:
+            return getCustomScore(text, scoring_system.prompt)
+        except Exception as e:
+            print(f"Scoring attempt {attempt} failed for article {article.id}: {e}")
+    return None
+
 
 def fetch_articles(app):
     with app.app_context():
-            links=[article.link for article in Article.query.all()]
+        try:
+            existing_links = {row[0] for row in db.session.query(Article.link).all()}
             for feed in Feed.query.all():
                 parsed_feed = feedparser.parse(feed.source)
-                for article in parsed_feed['entries']:
-                    if article['link'] in links:
-                        pass
-                    else:
-                        try:
-                            link = article['link']
-                            published = datetime(*article['published_parsed'][:6])
-                            print(type(published))
-                            icon_url = article['iconUrl'] = feed.icon
-                            bilde = article['bilde'] = hentBilde(article)
-                            #Med ai:
-                            #createArticle(feed, link, article.title, img_src=bilde, summarys=convert_to_html_format(hentSummary(article)), published_parsed=published, score=getScore(article))
-                            #Uten ai:
-                            createArticle(feed, link, article.title, img_src=bilde, summarys=convert_to_html_format(hentSummary(article)), published_parsed=published)
-                        except Exception as e:
-                            pass
-                
+                for entry in parsed_feed['entries']:
+                    if entry['link'] in existing_links:
+                        continue
+                    try:
+                        link = entry['link']
+                        raw_date = entry.get('published_parsed')
+                        published = datetime(*raw_date[:6]) if raw_date else datetime.utcnow()
+                        bilde = hentBilde(entry)
+                        summary = convert_to_html_format(hentSummary(entry))
+                        createArticle(feed, link, entry.title, img_src=bilde, summarys=summary, published_parsed=published)
+                        existing_links.add(link)
+                    except Exception as e:
+                        db.session.rollback()
+                        print(f"Failed to process article: {e}")
+        except Exception as e:
+            db.session.rollback()
+            print(f"fetch_articles failed: {e}")
+
+
+def score_pending_articles(app):
+    """For each feedgroup with a scoring system, score the 50 newest unscored articles."""
+    with app.app_context():
+        feedgroups = FeedGroup.query.filter(FeedGroup.scoring_system_id.isnot(None)).all()
+        for feedgroup in feedgroups:
+            scoring_system = feedgroup.scoring_system
+            if scoring_system is None:
+                continue
+
+            # Collect unique articles in this feedgroup, newest first
+            seen_ids = set()
+            all_articles = []
+            for feed in feedgroup.feeds:
+                for article in feed.articles:
+                    if article.id not in seen_ids:
+                        seen_ids.add(article.id)
+                        all_articles.append(article)
+
+            all_articles.sort(
+                key=lambda a: a.published_date or datetime.min,
+                reverse=True
+            )
+
+            # Already-scored article IDs for this system
+            scored_ids = {
+                row[0] for row in db.session.query(ArticleScore.article_id)
+                .filter_by(scoring_system_id=scoring_system.id).all()
+            }
+
+            # Score the 50 newest that are not yet scored
+            to_score = [a for a in all_articles[:50] if a.id not in scored_ids]
+
+            for article in to_score:
+                score = compute_article_score(article, scoring_system)
+                if score is not None:
+                    try:
+                        article_score = ArticleScore(
+                            article_id=article.id,
+                            scoring_system_id=scoring_system.id,
+                            score=score
+                        )
+                        db.session.add(article_score)
+                        db.session.commit()
+                    except Exception as e:
+                        db.session.rollback()
+                        print(f"Failed to save score for article {article.id}: {e}")
 
 
 if __name__ == "__main__":

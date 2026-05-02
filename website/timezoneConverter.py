@@ -17,4 +17,4 @@ def time_since(struct_time, user_timezone):
     delta = now - local_time
     
     # Format the time difference
-    return format_timedelta(delta, granularity='minute', locale='no')
+    return format_timedelta(delta, granularity='minute', locale='en')

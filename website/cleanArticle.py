@@ -3,7 +3,7 @@ from bs4 import BeautifulSoup
 #from summarizeGPT import getSummary as ai
 
 def get_clean_text(url):
-    response = requests.get(url)
+    response = requests.get(url, timeout=10, headers={"User-Agent": "Mozilla/5.0"})
     soup = BeautifulSoup(response.content, "html.parser")
 
     # Remove unwanted sections like navigation, footers, and sidebars
