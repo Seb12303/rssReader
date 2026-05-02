@@ -1,9 +1,10 @@
-Warning: This project will eat tokens very quickly. Recommended to use cheap models or locally hosted ones. Gemma4 is recommended. 
+Warning: This project will eat tokens very quickly. It is recommended to use cheap models or locally hosted ones. Gemma4 is a good option. 
 
-# LLM-based filter for rss-reader
-This project is essentially an original rss-reader application based on the feedparser library.
-I have decided to make it more like a social media feed page rather than a standard rssreader, which means
+# Social media like ss-reader
+This project is an original rss-reader application with a social media-like feed based on the feedparser library.
+You also make a cleartext prompt, which works as your "algoritihm" to decide which articles are at the top of your feed. 
 - No "mark as read" and no "1423 unread articles" header or similar. Just a plain feed.
+- An understandable and apporachable way to take control over your news feed
 <img src="Imgs/img2.png" alt="Scoring Interface" width="800">
 <img src="Imgs/img3.png" alt="Feed View" width="800">
 <img src="Imgs/img1.png" alt="Dashboard Overview" width="800">
