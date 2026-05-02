@@ -1,6 +1,6 @@
 Warning: This project will eat tokens very quickly. It is recommended to use cheap models or locally hosted ones. Gemma4 is a good option. 
 
-# Social media like ss-reader
+# Social media-like rss-reader
 This project is an original rss-reader application with a social media-like feed based on the feedparser library.
 You also make a cleartext prompt, which works as your "algoritihm" to decide which articles are at the top of your feed. 
 - No "mark as read" and no "1423 unread articles" header or similar. Just a plain feed.
