@@ -42,7 +42,13 @@ The site works as follows:
 - importing lists of feeds from other readers.
 
 
-#### Getting started
+## Getting started
+### Setup
+- Create an env with Python 3.13.5
+- run pip install -r requirements.txt
+- Configure your llm provider in config.yaml
+- run main.py
+### Usage
 - Create a user
 - The first created user is admin of the default feed for everybody. This is set to be the second feedgroup which that user creates in /manage. The default feed will show nothing before this is created.
 - You create your scoring system in /scoring.
